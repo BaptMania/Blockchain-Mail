@@ -416,16 +416,16 @@ Données envoyées avec succès: [{'miner': 1, 'left': 50, 'top': 50, 'nonce': '
 
 ## Ressources Supplémentaires
 
-[Lien du GitLab](https://gitlab.com/Varghulf/info0903-blockchain/-/tree/main)
+[Lien du GitHub](https://github.com/BaptMania/Blockchain-Mail)
 
 Cloner le projet avec SSH :
 
 ```bash
-git@gitlab.com:Varghulf/info0903-blockchain.git
+git@github.com:BaptMania/Blockchain-Mail.git
 ```
 ```bash
 cd existing_repo
-git remote add origin https://gitlab.com/Varghulf/info0903-blockchain.git
+git remote add origin https://github.com/BaptMania/Blockchain-Mail.git
 git branch -M main
 git push -uf origin main
 ```

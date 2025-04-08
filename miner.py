@@ -21,7 +21,11 @@ PRIVATE_MAIL = json.load(open("private.json", "r"))
 LIST_MAIL = json.load(open("listMail.json", "r"))
 
 
-def envoi_mail(blockchain_json: json, private_mail: dict, list_mail: list):
+def envoi_mail(
+        blockchain_json: json,
+        private_mail: dict,
+        list_mail: list
+) -> None:
     """
         Procédure qui permet d'envoyer un mail à tous les utilisateurs de la blockchain
         :param blockchain_json : Blockchain au format JSON
@@ -44,9 +48,8 @@ def envoi_mail(blockchain_json: json, private_mail: dict, list_mail: list):
     #   Création d'une mailList sans l'expéditeur
     mailList = []
     for mail in list(list_mail):
-        if mail["mail"] == private_mail["mail"]:
-            continue
-        mailList.append(mail["mail"])
+        if mail["mail"] != private_mail["mail"]:
+            mailList.append(mail["mail"])
 
     # Créer un message MIME
     msg = MIMEMultipart('mixed')
@@ -69,7 +72,11 @@ def envoi_mail(blockchain_json: json, private_mail: dict, list_mail: list):
     server.quit()
 
 
-def broadcast_blockchain(json_blockchain, identifiers, known_miners):
+def broadcast_blockchain(
+        json_blockchain: list,
+        identifiers: dict,
+        known_miners: list
+) -> None:
     """
         Procédure qui permet d'envoyer la blockchain par mail à tous les mineurs connus
         :param json_blockchain: La blockchain à envoyer (c'est censé être un JSON mais c'est une liste de blocks au format JSON).
@@ -97,7 +104,12 @@ def broadcast_blockchain(json_blockchain, identifiers, known_miners):
 
 
 class Miner(Thread):
-    def __init__(self, identifier, mail, balance=0):
+    def __init__(
+            self,
+            identifier: str,
+            mail: str,
+            balance: int = 0
+    ) -> None:
         """
             Une classe permettant de simuler un mineur recherchant des blocks pour alimenter sa blockchain.
             :param identifier: Équivaut à l\'identifiant du mineur. On considère que c\'est le corps de son adresse mail pour éviter les doublons ;
@@ -131,7 +143,10 @@ class Miner(Thread):
         self.time_last_block_mined = 0
         self.time_new_block_mined = 0
 
-    def __add__(self, miner):
+    def __add__(
+            self,
+            miner: str
+    ) -> None:
         """
             Remaniement de la fonction intégrée de sommation ('a + b'). Permet d'ajouter un mineur b à la des mineurs connus du mineur a.
             :param miner: C'est l'identifiant du mineur à ajouter à la liste des mineurs connus.
@@ -147,7 +162,7 @@ class Miner(Thread):
         """
         self.l_contact_miners.append(miner)
 
-    def run(self):
+    def run(self) -> bool:
         """
             Fonction qui permet de faire fonctionner le mineur
             :return: True si le programme a bien fonctionné
@@ -188,7 +203,7 @@ class Miner(Thread):
             print(self.id + " balance : " + str(self.get_balance()))
         return True
 
-    def create_repositories(self):
+    def create_repositories(self) -> None:
         """
             Procédure créant tous les dossiers nécessaires pour le bon déroulement de l'exécution d'un mineur
             :return: None si tout s'est bien déroulé
@@ -218,7 +233,10 @@ class Miner(Thread):
                 print(f"Le dossier existe déjà : {directory_exist_error}")
 
     #   On fera un "hachage" simple à réaliser
-    def create_nonce(self, block_info):
+    def create_nonce(
+            self,
+            block_info: str
+    ) -> str:
         """
             Fonction pour générer le nonce d'un block en fonction des informations de la transaction
             :param block_info: Contient toutes les informations à transformer en hash
@@ -237,11 +255,14 @@ class Miner(Thread):
             nonce = hashlib.sha256(string_b.encode()).hexdigest()
         return nonce
 
-    def mine_next_block(self, transaction):
+    def mine_next_block(
+            self,
+            transaction: t.Transaction
+    ) -> None:
         """
             Procédure pour miner un nouveau block
             :param transaction: la transaction à mettre dans le block
-            :type transaction: t
+            :type transaction: t.Transaction
             :return: None si tout s'est bien déroulé
             :rtype: None
         """
@@ -280,7 +301,7 @@ class Miner(Thread):
             except PermissionError as p_error:
                 print(f"Le block existe déjà {p_error}")
 
-    def validate_block(self):
+    def validate_block(self) -> None:
         """
             Procédure qui permet de valider un block (procédure à modifier)
             :param block_to_validate: le block qu'il faut valider
@@ -307,7 +328,7 @@ class Miner(Thread):
                             print(nonce)
                             print(block["nonce"])
 
-    def get_miner_id(self):
+    def get_miner_id(self) -> str:
         """
             Fonction permettant de récupérer l'identifiant d'un mineur
             :return: L'identifiant du mineur
@@ -315,7 +336,10 @@ class Miner(Thread):
         """
         return self.id
 
-    def reduce_balance(self, quantity):
+    def reduce_balance(
+            self,
+            quantity: int
+    ) -> None:
         """
             Procédure permettant de diminuer l'argent du mineur (probablement vouée à être supprimée)
             :param quantity: La quantité d'argent à soustraire
@@ -325,7 +349,7 @@ class Miner(Thread):
         """
         self.balance -= quantity
 
-    def read_email(self):
+    def read_email(self) -> None:
         """
             Procédure qui permet de recevoir les mails et de récupérer les fichiers JSON comportant les blockchains (à retravailler pour que ça fonctionne comme souhaité)
             :return: None si tout s'est bien déroulé
@@ -382,7 +406,7 @@ class Miner(Thread):
             print(f"Erreur : {error}")
             traceback.print_exc()
 
-    def get_balance(self):
+    def get_balance(self) -> int:
         """
             Procédure qui permet de calculer l'argent restant d'un mineur.
             :return: L'argent restant du mineur

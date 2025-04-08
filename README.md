@@ -372,10 +372,12 @@ Visualisation du fichier "__private.json__" :
 
 ```json
 {
-    "mail": "bc2.info0903@gmail.com",
-    "password": "xxcc erxw zkyf xxlh"
+    "mail": "mail@gmail.com",
+    "password": "**** **** **** ****"
 }
 ```
+*Il est important de noter que vous devez fournir votre mail avec votre mot de passe d'application.*
+
 
 Interface web du côté client :
 

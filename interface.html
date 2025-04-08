@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Shapes</title>
+    <style>
+        .shape {
+            position: absolute;
+            cursor: move;
+        }
+
+        .colored-rectangle {
+            background-color: #00f;
+            border: 1px solid #000;
+            padding: 10px;
+            position: absolute;
+        }
+
+        .text {
+            color: #fff;
+        }
+
+        .line {
+            stroke: #000;
+            stroke-width: 2;
+        }
+    </style>
+</head>
+
+<body>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        updateUI();
+    });
+
+    function refreshPage() {
+        //location.reload();  // Recharge la page
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setInterval(refreshPage, 5000);  // Actualise la page toutes les 5 secondes (ajustez selon vos besoins)
+
+        // Reste du code pour récupérer et afficher les rectangles et le texte initiaux...
+    });
+    //  Fonction d'affichage
+    function updateUI(){
+        //  Récupération des données
+        fetch('http://127.0.0.1:5000/l_blocks')
+        .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la récupération des données.');
+                }
+                return response.json();
+            })
+                .then(data => {
+                    console.log('Données récupérées avec succès:', data);
+                    // Création des constantes utilisées pour l'affichage
+                    const miners = {};
+                    const shapes = [];
+                    const lines = [];
+                    const minerColors = {}; // Tableau pour stocker les couleurs associées à chaque mineur
+                    // Création d'un élément svg dans lequel seront stockés les rectangles
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', window.innerWidth);
+                    svg.setAttribute('height', window.innerHeight);
+                    document.body.appendChild(svg);
+                    // Assignation de couleur unique à chaque mineur
+                    data.forEach((item, index) => {
+                        const miner = item.miner;
+
+                        if (!miners[miner]) {
+                            miners[miner] = [];
+                            minerColors[miner] = getRandomColor();
+                        }
+                        // Création de la forme de l'objet qui contiendra le rectangle et le texte
+                        const shape = document.createElement('div');
+                        shape.className = 'shape';
+                        shape.style.left = item.left + 'px';
+                        shape.style.top = item.top + 'px';
+                        // Création du rectangle
+                        const coloredRectangle = document.createElement('div');
+                        coloredRectangle.className = 'colored-rectangle';
+                        coloredRectangle.style.width = 'auto';
+                        coloredRectangle.style.backgroundColor = minerColors[miner]; // Utiliser la couleur du mineur
+                        // Ajout du texte
+                        const textContent = document.createElement('div');
+                        textContent.className = 'text';
+                        textContent.innerText = `Nonce: ${item.nonce}\nPrevious Hash: ${item.previous_hash}\nBounty: ${item.bounty}\nFounder: ${item.founder}`;
+                        // Assignation du texte au rectangle
+                        coloredRectangle.appendChild(textContent);
+                        shape.appendChild(coloredRectangle);
+                        // Assignation du rectangle à l'objet
+                        document.body.appendChild(shape);
+                        // On rend le rectangle amovible
+                        miners[miner].push(shape);
+                        shapes.push(shape);
+                        makeDraggable(shape);
+                    });
+                    //  On connecte les rectangles colorés de la même blockchain entre eux
+                    connectBlocks();
+
+                    // Fonction pour extraire le nonce d'un bloc
+                    function extractNonceFromBlock(blockShape) {
+                        const nonceElement = blockShape.querySelector('.text'); // Utiliser la classe 'text' pour extraire le nonce
+                        const nonceMatch = nonceElement.innerText.match(/Nonce: (.+)/);
+                        return nonceMatch ? nonceMatch[1] : null;
+                    }
+
+                    // Fonction pour extraire le previous_hash d'un bloc
+                    function extractPreviousHashFromBlock(blockShape) {
+                        const previousHashElement = blockShape.querySelector('.text'); // Utiliser la classe 'text' pour extraire le previous_hash
+                        const previousHashMatch = previousHashElement.innerText.match(/Previous Hash: (.+)/);
+                        return previousHashMatch ? previousHashMatch[1] : null;
+                    }
+
+
+                    function connectBlocks() {
+                        for (const miner in miners) {
+                            const minerShapes = miners[miner];
+
+                            for (let i = 0; i < minerShapes.length; i++) {
+                                const fromShape = minerShapes[i];
+                                const fromRect = fromShape.querySelector('.colored-rectangle');
+                                const fromNonce = extractNonceFromBlock(fromShape);
+
+                                for (let j = 0; j < minerShapes.length; j++) {
+                                    if (i !== j) {
+                                        const toShape = minerShapes[j];
+                                        const toRect = toShape.querySelector('.colored-rectangle');
+                                        const toPreviousHash = extractPreviousHashFromBlock(toShape);
+
+                                        console.log('miner:', miner);
+                                        console.log('fromNonce:', fromNonce);
+                                        console.log('toPreviousHash:', toPreviousHash);
+
+                                        if (fromNonce === toPreviousHash) {
+                                            const fromRectCoords = getCenterCoordinates(fromRect);
+                                            const toRectCoords = getCenterCoordinates(toRect);
+
+                                            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                                            line.setAttribute('x1', fromRectCoords.x);
+                                            line.setAttribute('y1', fromRectCoords.y);
+                                            line.setAttribute('x2', toRectCoords.x);
+                                            line.setAttribute('y2', toRectCoords.y);
+                                            line.setAttribute('class', 'line');
+                                            line.style.stroke = minerColors[miner];
+                                            svg.appendChild(line);
+
+                                            lines.push({ line, fromShape, toShape });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+
+
+
+                    function connectRectangles() {
+                        //  Parcours de tous les mineurs ainsi que de leurs formes
+                        for (const miner in miners) {
+                            const minerShapes = miners[miner];
+                            //  Récupération des rectangles colorés
+                            for (let i = 0; i < minerShapes.length - 1; i++) {
+                                for (let j = i + 1; j < minerShapes.length; j++) {
+                                    const fromShape = minerShapes[i];
+                                    const toShape = minerShapes[j];
+
+                                    const fromRect = fromShape.querySelector('.colored-rectangle');
+                                    const toRect = toShape.querySelector('.colored-rectangle');
+                                    //  Récupération des coordonnées du centre des rectangles
+                                    const fromRectCoords = getCenterCoordinates(fromRect);
+                                    const toRectCoords = getCenterCoordinates(toRect);
+                                    //  Création d'une ligne
+                                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                                    line.setAttribute('x1', fromRectCoords.x);
+                                    line.setAttribute('y1', fromRectCoords.y);
+                                    line.setAttribute('x2', toRectCoords.x);
+                                    line.setAttribute('y2', toRectCoords.y);
+                                    line.setAttribute('class', 'line');
+                                    line.style.stroke = minerColors[miner]; // Utiliser la couleur du mineur
+                                    svg.appendChild(line);
+
+                                    lines.push({ line, fromShape, toShape });
+                                }
+                            }
+                        }
+                    }
+
+                    function getCenterCoordinates(element) {
+                        const rect = element.getBoundingClientRect();
+                        return {
+                            x: rect.left + rect.width / 2,
+                            y: rect.top + rect.height / 2
+                        };
+                    }
+
+                    function makeDraggable(element) {
+                        let offsetX, offsetY, isDragging = false;
+
+                        element.addEventListener('mousedown', function (e) {
+                            isDragging = true;
+                            offsetX = e.clientX - element.getBoundingClientRect().left;
+                            offsetY = e.clientY - element.getBoundingClientRect().top;
+                        });
+
+                        document.addEventListener('mousemove', function (e) {
+                            if (isDragging) {
+                                element.style.left = (e.clientX - offsetX) + 'px';
+                                element.style.top = (e.clientY - offsetY) + 'px';
+                                updateLines();
+                            }
+                        });
+
+                        document.addEventListener('mouseup', function () {
+                            isDragging = false;
+                        });
+
+                        function updateLines() {
+                            lines.forEach(({ line, fromShape, toShape }) => {
+                                const fromRect = fromShape.querySelector('.colored-rectangle');
+                                const toRect = toShape.querySelector('.colored-rectangle');
+
+                                const fromRectCoords = getCenterCoordinates(fromRect);
+                                const toRectCoords = getCenterCoordinates(toRect);
+                                line.setAttribute('x1', fromRectCoords.x);
+                                line.setAttribute('y1', fromRectCoords.y);
+                                line.setAttribute('x2', toRectCoords.x);
+                                line.setAttribute('y2', toRectCoords.y);
+                            });
+                        }
+                    }
+
+                    function getRandomColor() {
+                        // Générer une couleur aléatoire au format hexadécimal
+                        return '#' + Math.floor(Math.random() * 16777215).toString(16);
+                    }
+                })
+                .catch(error => console.error('Erreur lors de la récupération des données:', error));
+    }
+</script>
+</body>
+
+</html>
